@@ -36,12 +36,12 @@ if (-not (Test-Path $BackupDir)) {
 Write-Host "[1/2] Mengambil backup folder 'wp-content' dari container..." -ForegroundColor Yellow
 
 $wpContentBackupFile = Join-Path $BackupDir "wp-content.tar.gz"
-$execCheck = & docker compose exec -T wordpress sh -c "test -d /var/www/html/wp-content && echo OK" 2>$null
+$execCheck = & docker compose exec -T ols sh -c "test -d /var/www/vhosts/localhost/html/wp-content && echo OK" 2>$null
 
 if ($execCheck -match "OK") {
-    & docker compose exec -T wordpress tar -czf /tmp/wp-content.tar.gz -C /var/www/html wp-content
-    & docker compose cp wordpress:/tmp/wp-content.tar.gz $wpContentBackupFile
-    & docker compose exec -T wordpress rm -f /tmp/wp-content.tar.gz
+    & docker compose exec -T ols tar -czf /tmp/wp-content.tar.gz -C /var/www/vhosts/localhost/html wp-content
+    & docker compose cp ols:/tmp/wp-content.tar.gz $wpContentBackupFile
+    & docker compose exec -T ols rm -f /tmp/wp-content.tar.gz
     Write-Host "      -> Berhasil! File tersimpan di: $wpContentBackupFile" -ForegroundColor Green
 } else {
     Write-Host "      [INFO] Mengambil backup langsung dari mount lokal..." -ForegroundColor DarkYellow

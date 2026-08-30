@@ -45,13 +45,13 @@ mkdir -p "${BACKUP_DIR}"
 # ------------------------------------------------------------------------------
 echo "[1/2] Mengambil backup folder 'wp-content' dari container..."
 
-if docker compose exec -T wordpress sh -c 'test -d /var/www/html/wp-content' 2>/dev/null; then
-  docker compose exec -T wordpress sh -c 'tar -czf /tmp/wp-content.tar.gz -C /var/www/html wp-content'
-  docker compose cp wordpress:/tmp/wp-content.tar.gz "${BACKUP_DIR}/wp-content.tar.gz"
-  docker compose exec -T wordpress rm -f /tmp/wp-content.tar.gz
+if docker compose exec -T ols sh -c 'test -d /var/www/vhosts/localhost/html/wp-content' 2>/dev/null; then
+  docker compose exec -T ols sh -c 'tar -czf /tmp/wp-content.tar.gz -C /var/www/vhosts/localhost/html wp-content'
+  docker compose cp ols:/tmp/wp-content.tar.gz "${BACKUP_DIR}/wp-content.tar.gz"
+  docker compose exec -T ols rm -f /tmp/wp-content.tar.gz
   echo "      -> Berhasil! File tersimpan di: ${BACKUP_DIR}/wp-content.tar.gz"
 else
-  echo "      [INFO] Container WordPress tidak aktif via exec. Mengambil dari volume lokal..."
+  echo "      [INFO] Container OpenLiteSpeed tidak aktif via exec. Mengambil dari volume lokal..."
   if [ -d "wordpress/wp-content" ]; then
     tar -czf "${BACKUP_DIR}/wp-content.tar.gz" -C wordpress wp-content
     echo "      -> Berhasil (dari local mount): ${BACKUP_DIR}/wp-content.tar.gz"

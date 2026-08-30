@@ -1,27 +1,46 @@
 #!/bin/sh
 set -eu
 
+# Increase PHP memory limit for WP-CLI operations
+wp() {
+  php -d memory_limit=512M /usr/local/bin/wp "$@"
+}
+
 WP_PATH="/var/www/html"
 
-# Wait for WordPress core files to be extracted and wp-config.php to be generated
-echo "[Auto-Installer] Waiting for WordPress core and wp-config.php..."
+echo "[Auto-Installer] Starting OpenLiteSpeed WordPress initialization..."
 
-until [ -f "${WP_PATH}/wp-config.php" ] && \
-      [ -f "${WP_PATH}/wp-includes/version.php" ]; do
-  sleep 2
-done
+# 1. Download WordPress core if missing
+if [ ! -f "${WP_PATH}/wp-includes/version.php" ]; then
+  echo "[Auto-Installer] WordPress core files not found. Downloading..."
+  wp core download --path="${WP_PATH}" --locale="${WP_LOCALE:-en_US}"
+fi
 
-echo "[Auto-Installer] WordPress files are ready."
+# 2. Generate wp-config.php if missing
+if [ ! -f "${WP_PATH}/wp-config.php" ]; then
+  echo "[Auto-Installer] Generating wp-config.php..."
+  wp config create \
+    --path="${WP_PATH}" \
+    --dbname="${WORDPRESS_DB_NAME}" \
+    --dbuser="${WORDPRESS_DB_USER}" \
+    --dbpass="${WORDPRESS_DB_PASSWORD}" \
+    --dbhost="${WORDPRESS_DB_HOST}" \
+    --extra-php="if (!defined('WP_DEBUG')) { define('WP_DEBUG', true); }
+if (!defined('WP_DEBUG_LOG')) { define('WP_DEBUG_LOG', true); }
+if (!defined('WP_DEBUG_DISPLAY')) { define('WP_DEBUG_DISPLAY', false); }"
+fi
 
-# Check if WordPress is already installed to prevent re-installation
+echo "[Auto-Installer] WordPress core and wp-config.php are ready."
+
+# 3. Check if WordPress is already installed
 if wp core is-installed --path="${WP_PATH}" 2>/dev/null; then
   echo "[Auto-Installer] WordPress is already installed."
   exit 0
 fi
 
-echo "[Auto-Installer] Starting automatic WordPress installation..."
+echo "[Auto-Installer] Installing WordPress..."
 
-# Run the WordPress installation command and retry if it fails
+# 4. Install WordPress
 until wp core install \
   --path="${WP_PATH}" \
   --url="${WP_URL}" \
@@ -36,4 +55,10 @@ until wp core install \
   sleep 3
 done
 
-echo "[Auto-Installer] WordPress has been installed automatically."
+echo "[Auto-Installer] Installing and activating LiteSpeed Cache (LSCache) plugin..."
+wp plugin install litespeed-cache --activate --path="${WP_PATH}" || true
+
+echo "[Auto-Installer] Setting up permalink structure..."
+wp rewrite structure '/%postname%/' --path="${WP_PATH}" || true
+
+echo "[Auto-Installer] OpenLiteSpeed WordPress setup completed successfully!"
