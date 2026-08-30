@@ -59,6 +59,7 @@ services:
   wp-auto-install:
     image: wordpress:cli
     container_name: ${COMPOSE_PROJECT_NAME}-auto-install
+    user: "root"
     restart: "no"
     depends_on:
       db:

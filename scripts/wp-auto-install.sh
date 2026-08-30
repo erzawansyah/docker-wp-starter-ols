@@ -3,7 +3,7 @@ set -eu
 
 # Increase PHP memory limit for WP-CLI operations
 wp() {
-  php -d memory_limit=512M /usr/local/bin/wp "$@"
+  php -d memory_limit=512M /usr/local/bin/wp --allow-root "$@"
 }
 
 WP_PATH="/var/www/html"
@@ -35,6 +35,8 @@ echo "[Auto-Installer] WordPress core and wp-config.php are ready."
 # 3. Check if WordPress is already installed
 if wp core is-installed --path="${WP_PATH}" 2>/dev/null; then
   echo "[Auto-Installer] WordPress is already installed."
+  echo "[Auto-Installer] Fixing file ownership for OpenLiteSpeed..."
+  chown -R 65534:65534 "${WP_PATH}"
   exit 0
 fi
 
@@ -60,5 +62,8 @@ wp plugin install litespeed-cache --activate --path="${WP_PATH}" || true
 
 echo "[Auto-Installer] Setting up permalink structure..."
 wp rewrite structure '/%postname%/' --path="${WP_PATH}" || true
+
+echo "[Auto-Installer] Fixing file ownership for OpenLiteSpeed..."
+chown -R 65534:65534 "${WP_PATH}"
 
 echo "[Auto-Installer] OpenLiteSpeed WordPress setup completed successfully!"
