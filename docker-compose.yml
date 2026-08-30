@@ -37,6 +37,7 @@ services:
       ADMIN_PASSWORD: ${OLS_ADMIN_PASSWORD}
     volumes:
       - ./wordpress:/var/www/vhosts/localhost/html
+      - ./config/vhconf.conf:/usr/local/lsws/conf/vhosts/Example/vhconf.conf
     networks:
       - wp-net
 
