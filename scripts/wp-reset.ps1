@@ -33,8 +33,15 @@ if ($All) {
 
 foreach ($target in $targets) {
     if (Test-Path $target) {
-        Remove-Item -Path $target -Recurse -Force
-        Write-Host "deleted: $target" -ForegroundColor Green
+        try {
+            Remove-Item -Path $target -Recurse -Force -ErrorAction Stop
+            Write-Host "deleted: $target" -ForegroundColor Green
+        } catch {
+            # Fallback for Windows locks / special filenames created by Docker
+            & docker run --rm -v "${target}:/target" alpine sh -c "rm -rf /target/* /target/.* 2>/dev/null || true" 2>$null
+            Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host "deleted (via fallback): $target" -ForegroundColor Green
+        }
     } else {
         Write-Host "skip: $target" -ForegroundColor DarkGray
     }
